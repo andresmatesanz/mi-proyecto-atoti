@@ -1,3 +1,7 @@
+"""
+Este script mueve los datos crudos a la RAM
+"""
+
 from pathlib import Path
 import atoti as tt
 import pandas as pd
@@ -6,8 +10,9 @@ from pydantic import HttpUrl
 from .config import Config
 from .opentelemetry import span
 from .path import RESOURCES_DIRECTORY
-from .skeleton import Skeleton  # <--- Fundamental
+from .skeleton import Skeleton   # Donde hemos definido nombres de tablas y columnas
 
+# "async" indica que es una función asíncrona
 @span
 async def load_tables(
     session: tt.Session,

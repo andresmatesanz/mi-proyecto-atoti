@@ -11,6 +11,7 @@ def create_trades_table(session: tt.Session, /) -> None:
 
     session.create_table(
         tables.TRADES,
+        # En "data_types" se define el tipo de cada columna de la tabla "TRADES"
         data_types={
             columns.TRADE_ID: tt.STRING,
             columns.AS_OF_DATE: tt.LOCAL_DATE,
