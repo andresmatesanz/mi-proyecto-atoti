@@ -1,0 +1,7 @@
+Book,BookOwner,Region,RiskAppetite
+EQ_BOOK_EU,Alice,EMEA,Medium
+EQ_BOOK_US,Bob,AMER,High
+FX_BOOK_G10,Carla,GLOBAL,Low
+FX_BOOK_EM,Diego,EMEA,High
+IR_BOOK_EUR,Elena,EMEA,Medium
+IR_BOOK_USD,Federico,AMER,Medium

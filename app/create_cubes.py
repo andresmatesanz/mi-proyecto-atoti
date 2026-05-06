@@ -1,66 +1,37 @@
 import atoti as tt
-
 from .opentelemetry import span
 from .skeleton import Skeleton
-from .util import column, fact_based_hierarchy
-
 
 @span
-def create_station_cube(session: tt.Session, /) -> None:
-    skeleton = Skeleton.cubes.STATION
+def create_trading_cube(session: tt.Session, /) -> None:
+    tables = Skeleton.tables
+    trades_cols = tables.TRADES_COLUMNS
+    books_cols = tables.BOOKS_COLUMNS # Necesitaremos las columnas de Books
 
-    cube = session.create_cube(
-        session.tables[Skeleton.tables.STATION_STATUS.name],
-        skeleton.name,
-        mode="manual",
-    )
+    cube = session.create_cube(session.tables[tables.TRADES], "Trading")
     h, l, m = cube.hierarchies, cube.levels, cube.measures
 
-    h.update(
-        [
-            fact_based_hierarchy(
-                session,
-                skeleton.dimensions.STATION_INFORMATION.LOCATION,
-                lambda hierarchy: {
-                    hierarchy.DEPARTMENT: Skeleton.tables.STATION_INFORMATION.DEPARTMENT,
-                    hierarchy.CITY: Skeleton.tables.STATION_INFORMATION.CITY,
-                    hierarchy.POSTCODE: Skeleton.tables.STATION_INFORMATION.POSTCODE,
-                    hierarchy.STREET: Skeleton.tables.STATION_INFORMATION.STREET,
-                    hierarchy.HOUSE_NUMBER: Skeleton.tables.STATION_INFORMATION.HOUSE_NUMBER,
-                },
-            ),
-            fact_based_hierarchy(
-                session,
-                skeleton.dimensions.STATION_INFORMATION.STATION,
-                lambda hierarchy: {
-                    hierarchy.NAME: Skeleton.tables.STATION_INFORMATION.NAME,
-                    hierarchy.ID: Skeleton.tables.STATION_INFORMATION.ID,
-                },
-            ),
-            fact_based_hierarchy(
-                session,
-                skeleton.dimensions.STATION_STATUS.BIKE_TYPE,
-                lambda hierarchy: {
-                    hierarchy.BIKE_TYPE: Skeleton.tables.STATION_STATUS.BIKE_TYPE,
-                },
-            ),
-        ]
+    # 1. Jerarquía de fechas
+    cube.create_date_hierarchy(
+        "Date parts",
+        column=session.tables[tables.TRADES][trades_cols.AS_OF_DATE],
+        levels={"Year": "yyyy", "Month": "MMMM", "Day": "dd"}
     )
 
-    with session.data_model_transaction():
-        m[skeleton.measures.BIKES.name] = tt.agg.sum(
-            column(session, Skeleton.tables.STATION_STATUS.BIKES)
-        )
-        m[skeleton.measures.CAPACITY.name] = tt.agg.sum(
-            tt.agg.single_value(
-                column(session, Skeleton.tables.STATION_INFORMATION.CAPACITY)
-            ),
-            scope=tt.OriginScope(
-                {l[skeleton.dimensions.STATION_INFORMATION.STATION.ID.key]}
-            ),
-        )
+    # 2. Jerarquía multinivel Desk -> Book
+    h["Desk"] = [l["Desk"], l["Book"]]
+    if "Book" in h:
+        del h["Book"]
 
+    # 3. Medidas personalizadas
+    with session.data_model_transaction():
+        # La medida AbsNotional
+        m["AbsNotional"] = tt.math.abs(m[f"{trades_cols.NOTIONAL}.SUM"])
+
+        # Medida que se crea de forma automática, pero si en algún momento decidimos cambiarlo a "manual" conviene crearlo
+        # También si lo definimos se pueden modificar parámetros
+        m["MarketValue.SUM"] = tt.agg.sum(session.tables[tables.TRADES][trades_cols.MARKET_VALUE])
 
 @span
 def create_cubes(session: tt.Session, /) -> None:
-    create_station_cube(session)
+    create_trading_cube(session)
