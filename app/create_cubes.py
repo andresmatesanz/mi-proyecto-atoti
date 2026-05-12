@@ -2,36 +2,56 @@ import atoti as tt
 from .opentelemetry import span
 from .skeleton import Skeleton
 
+# Función principal que llama a funciones que se crean en este script
 @span
-def create_trading_cube(session: tt.Session, /) -> None:
-    tables = Skeleton.tables
-    trades_cols = tables.TRADES_COLUMNS
-    books_cols = tables.BOOKS_COLUMNS # Necesitaremos las columnas de Books
+def create_cubes(session: tt.Session, /) -> None:
+    create_sensitivities_cube(session)
 
-    cube = session.create_cube(session.tables[tables.TRADES], "Trading")
+@span
+def create_sensitivities_cube(session: tt.Session, /) -> None:
+    tables = Skeleton.tables
+    sensi_cols = tables.SENSITIVITIES_COLUMNS
+    trade_cols = tables.TRADE_INFO_COLUMNS
+    risk_cols = tables.RISK_FACTORS_COLUMNS
+
+    # Definimos las referencias a las tablas de la sesión
+    sensitivities = session.tables[tables.SENSITIVITIES]
+    trade_info = session.tables[tables.TRADE_INFO]
+    risk_factors = session.tables[tables.RISK_FACTORS]
+
+    cube = session.create_cube(sensitivities, mode="manual", name="SensitivityCube")
     h, l, m = cube.hierarchies, cube.levels, cube.measures
 
-    # 1. Jerarquía de fechas
+    # Jerarquía de fechas
     cube.create_date_hierarchy(
         "Date parts",
-        column=session.tables[tables.TRADES][trades_cols.AS_OF_DATE],
+        column=sensitivities[sensi_cols.AS_OF_DATE],
         levels={"Year": "yyyy", "Month": "MMMM", "Day": "dd"}
     )
 
-    # 2. Jerarquía multinivel Desk -> Book
-    h["Desk"] = [l["Desk"], l["Book"]]
-    if "Book" in h:
-        del h["Book"]
+    h["AsOfDate"] = [sensitivities[sensi_cols.AS_OF_DATE]]
+    h["AsOfDate"].slicing = True
 
-    # 3. Medidas personalizadas
+    # Jerarquías multinivel
+    h["Org"] = {
+        "Desk": trade_info["Desk"],
+        "Book": trade_info["Book"],
+    }
+
+    h["RiskHierarchy"] = [
+        risk_factors[risk_cols.RISK_CLASS],
+        risk_factors[risk_cols.BUCKET],
+        risk_factors[risk_cols.RISK_FACTOR],
+    ]
+
+    # Jerarquías Simples
+    h["Counterparty"] = [trade_info[trade_cols.COUNTERPARTY]]
+    h["ProductType"]  = [trade_info[trade_cols.PRODUCT_TYPE]]
+    h["Currency"]     = [risk_factors[risk_cols.CURRENCY]]
+
+    # Medidas explícitas
     with session.data_model_transaction():
-        # La medida AbsNotional
-        m["AbsNotional"] = tt.math.abs(m[f"{trades_cols.NOTIONAL}.SUM"])
-
-        # Medida que se crea de forma automática, pero si en algún momento decidimos cambiarlo a "manual" conviene crearlo
-        # También si lo definimos se pueden modificar parámetros
-        m["MarketValue.SUM"] = tt.agg.sum(session.tables[tables.TRADES][trades_cols.MARKET_VALUE])
-
-@span
-def create_cubes(session: tt.Session, /) -> None:
-    create_trading_cube(session)
+        m["Delta.SUM"]         = tt.agg.sum(sensitivities["Delta"])
+        m["Vega.SUM"]          = tt.agg.sum(sensitivities["Vega"])
+        m["CurvatureUp.SUM"]   = tt.agg.sum(sensitivities["CurvatureUp"])
+        m["CurvatureDown.SUM"] = tt.agg.sum(sensitivities["CurvatureDown"])
