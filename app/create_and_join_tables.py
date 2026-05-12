@@ -3,6 +3,14 @@ import atoti as tt
 from .opentelemetry import span
 from .skeleton import Skeleton
 
+# Función principal que llama a funciones que se crean en este script
+@span
+def create_and_join_tables(session: tt.Session, /) -> None:
+    create_sensitivities_table(session)
+    create_trade_info_table(session)
+    create_risk_factors_table(session)
+    join_tables(session)
+
 @span
 def create_sensitivities_table(session: tt.Session, /) -> None:
     # Usamos las constantes del Skeleton
@@ -78,10 +86,3 @@ def join_tables(session: tt.Session, /) -> None:
         session.tables[tables.SENSITIVITIES][sensi_cols.RISK_FACTOR]
         == session.tables[tables.RISK_FACTORS][risk_cols.RISK_FACTOR],
     )
-
-@span
-def create_and_join_tables(session: tt.Session, /) -> None:
-    create_sensitivities_table(session)
-    create_trade_info_table(session)
-    create_risk_factors_table(session)
-    join_tables(session)
