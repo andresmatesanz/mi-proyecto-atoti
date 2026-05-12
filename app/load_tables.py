@@ -22,16 +22,19 @@ async def load_tables(
     **kwargs,
 ) -> None:
     # 1. Rutas
-    trades_path = RESOURCES_DIRECTORY / "trades.csv"
-    books_path = RESOURCES_DIRECTORY / "books.csv"
+    sensitivities_path = RESOURCES_DIRECTORY / "sensitivities.csv"
+    trade_info_path = RESOURCES_DIRECTORY / "trade_info.csv"
+    risk_factors_path = RESOURCES_DIRECTORY / "risk_factors.csv"
 
     # 2. Cargamos los datos convirtiendo la columna de fecha
     # Añadimos parse_dates para que "AsOfDate" sea una fecha de verdad
-    trades_df = pd.read_csv(trades_path, parse_dates=[Skeleton.tables.TRADES_COLUMNS.AS_OF_DATE])
-    books_df = pd.read_csv(books_path)
+    sensitivities_df = pd.read_csv(sensitivities_path)
+    trade_info_df = pd.read_csv(trade_info_path)
+    risk_factors_df = pd.read_csv(risk_factors_path)
 
     # 3. Metemos los datos en Atoti
     tables = Skeleton.tables
     with session.tables.data_transaction():
-        session.tables[tables.TRADES].load(trades_df)
-        session.tables[tables.BOOKS].load(books_df)
+        session.tables[tables.SENSITIVITIES].load(sensitivities_df)
+        session.tables[tables.TRADE_INFO].load(trade_info_df)
+        session.tables[tables.RISK_FACTORS].load(risk_factors_df)

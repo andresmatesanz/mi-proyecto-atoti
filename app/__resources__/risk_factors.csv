@@ -1,0 +1,13 @@
+RiskFactor,RiskClass,Bucket,Currency
+EQ_DAX,Equity,Large,EUR
+EQ_SP500,Equity,Large,USD
+EQ_NIKKEI,Equity,Large,JPY
+EQ_EM_INDEX,Equity,Small,USD
+FX_EURUSD,FX,G10,USD
+FX_GBPUSD,FX,G10,USD
+FX_USDJPY,FX,G10,JPY
+FX_USDBRL,FX,EM,USD
+IR_EUR_2Y,Rates,Short,EUR
+IR_EUR_10Y,Rates,Long,EUR
+IR_USD_2Y,Rates,Short,USD
+IR_USD_10Y,Rates,Long,USD
