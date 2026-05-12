@@ -18,6 +18,7 @@ def create_sensitivities_cube(session: tt.Session, /) -> None:
     sensitivities = session.tables[tables.SENSITIVITIES]
     trade_info = session.tables[tables.TRADE_INFO]
     risk_factors = session.tables[tables.RISK_FACTORS]
+    calendar = session.tables["Calendar"]
 
     cube = session.create_cube(sensitivities, mode="manual", name="SensitivityCube")
     h, l, m = cube.hierarchies, cube.levels, cube.measures
@@ -33,15 +34,22 @@ def create_sensitivities_cube(session: tt.Session, /) -> None:
     h["AsOfDate"].slicing = True
 
     # Jerarquías multinivel
-    h["Org"] = {
-        "Desk": trade_info["Desk"],
-        "Book": trade_info["Book"],
-    }
+    h["Org"] = [
+        trade_info[trade_cols.DESK],
+        trade_info[trade_cols.BOOK]
+    ]
 
     h["RiskHierarchy"] = [
         risk_factors[risk_cols.RISK_CLASS],
         risk_factors[risk_cols.BUCKET],
         risk_factors[risk_cols.RISK_FACTOR],
+    ]
+
+    h["Time"] = [
+        calendar["Year"],
+        calendar["Quarter"],
+        calendar["Month"],
+        calendar["Day"]
     ]
 
     # Jerarquías Simples

@@ -9,6 +9,7 @@ def create_and_join_tables(session: tt.Session, /) -> None:
     create_sensitivities_table(session)
     create_trade_info_table(session)
     create_risk_factors_table(session)
+    create_calendar_table(session)
     join_tables(session)
 
 @span
@@ -66,6 +67,24 @@ def create_risk_factors_table(session: tt.Session, /) -> None:
     )
 
 @span
+def create_calendar_table(session: tt.Session, /) -> None:
+    # Las siguientes dos líneas hay que comentarlas antes de que figure en el skeleton
+    # tables = Skeleton.tables
+    # columns = tables.CALENDAR_COLUMNS
+
+    session.create_table(
+        "Calendar",  # Usamos el string directo
+        keys={"AsOfDate"},
+        data_types={
+            "AsOfDate": tt.LOCAL_DATE,
+            "Year":     tt.STRING,
+            "Month":    tt.STRING,
+            "Day":      tt.STRING,
+            "Quarter":  tt.STRING,
+        },
+    )
+
+@span
 def join_tables(session: tt.Session, /) -> None:
     tables = Skeleton.tables
     sensi_cols = tables.SENSITIVITIES_COLUMNS
@@ -85,4 +104,10 @@ def join_tables(session: tt.Session, /) -> None:
         session.tables[tables.RISK_FACTORS],
         session.tables[tables.SENSITIVITIES][sensi_cols.RISK_FACTOR]
         == session.tables[tables.RISK_FACTORS][risk_cols.RISK_FACTOR],
+    )
+    # Join: Sensitivities -> Calendar
+    session.tables[tables.SENSITIVITIES].join(
+        session.tables["Calendar"],
+        session.tables[tables.SENSITIVITIES][sensi_cols.AS_OF_DATE]
+        == session.tables["Calendar"]["AsOfDate"],
     )
