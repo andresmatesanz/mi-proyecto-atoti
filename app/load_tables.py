@@ -27,8 +27,11 @@ async def load_tables(
     risk_factors_path = RESOURCES_DIRECTORY / "risk_factors.csv"
 
     # 2. Cargamos los datos convirtiendo la columna de fecha
-    # Añadimos parse_dates para que "AsOfDate" sea una fecha de verdad
-    sensitivities_df = pd.read_csv(sensitivities_path)
+    # Usamos parse_dates para que Atoti reconozca el tt.LOCAL_DATE correctamente
+    sensitivities_df = pd.read_csv(
+        sensitivities_path,
+        parse_dates=[Skeleton.tables.SENSITIVITIES_COLUMNS.AS_OF_DATE]
+    )
     trade_info_df = pd.read_csv(trade_info_path)
     risk_factors_df = pd.read_csv(risk_factors_path)
 
