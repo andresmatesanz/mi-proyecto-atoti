@@ -38,14 +38,17 @@ async def load_tables(
     # Lectura del dataframe
     rf_df = pd.read_csv(risk_factors_path)
     # Filtramos la columna "Currency" para que solo tenga los valores "EUR" y "USD"
-    rf_df_filtrado = rf_df[rf_df[risk_cols.CURRENCY].isin(["EUR", "USD"])]
+    rf_df_filtered = rf_df[rf_df[risk_cols.CURRENCY].isin(["EUR", "USD"])]
 
     # La tabla de sensibilidades no tiene columna "Currency" pero sí que tiene columna "RiskFactor" (como la tabla de factores de riesgos)
     # Seleccionar de la tabla de factores de riesgos los valores de la columna "RiskFactor" si la columna "Currency" tiene las divisas requeridas
-    valid_factors = rf_df_filtrado[risk_cols.RISK_FACTOR].unique()
+    valid_factors = rf_df_filtered[risk_cols.RISK_FACTOR].unique()
 
     # Con los factores extraídos, filtrar el dataframe de sensibilidades
-    sens_df = pd.read_csv(sensitivities_path)
+    sens_df = pd.read_csv(
+        sensitivities_path,
+        parse_dates=[sensi_cols.AS_OF_DATE]
+    )
     sens_df_filtered = sens_df[sens_df[sensi_cols.RISK_FACTOR].isin(valid_factors)]
 
     # Cargamos los datos convirtiendo la columna de fecha
@@ -74,5 +77,5 @@ async def load_tables(
     with session.tables.data_transaction():
         session.tables[tables.SENSITIVITIES].load(sens_df_filtered)
         session.tables[tables.TRADE_INFO].load(trade_info_df)
-        session.tables[tables.RISK_FACTORS].load(rf_df_filtrado)
+        session.tables[tables.RISK_FACTORS].load(rf_df_filtered)
         session.tables[tables.CALENDAR].load(calendar_df)
