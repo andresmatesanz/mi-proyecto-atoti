@@ -13,12 +13,13 @@ def create_sensitivities_cube(session: tt.Session, /) -> None:
     sensi_cols = tables.SENSITIVITIES_COLUMNS
     trade_cols = tables.TRADE_INFO_COLUMNS
     risk_cols = tables.RISK_FACTORS_COLUMNS
+    cal_cols = tables.CALENDAR_COLUMNS
 
     # Definimos las referencias a las tablas de la sesión
     sensitivities = session.tables[tables.SENSITIVITIES]
     trade_info = session.tables[tables.TRADE_INFO]
     risk_factors = session.tables[tables.RISK_FACTORS]
-    calendar = session.tables["Calendar"]
+    calendar = session.tables[tables.CALENDAR]
 
     cube = session.create_cube(sensitivities, mode="manual", name="SensitivityCube")
     h, l, m = cube.hierarchies, cube.levels, cube.measures
@@ -46,10 +47,10 @@ def create_sensitivities_cube(session: tt.Session, /) -> None:
     ]
 
     h["Time"] = [
-        calendar["Year"],
-        calendar["Quarter"],
-        calendar["Month"],
-        calendar["Day"]
+        calendar[cal_cols.YEAR],
+        calendar[cal_cols.QUARTER],
+        calendar[cal_cols.MONTH],
+        calendar[cal_cols.DAY]
     ]
 
     # Jerarquías Simples

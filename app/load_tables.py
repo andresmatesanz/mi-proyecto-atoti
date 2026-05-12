@@ -53,4 +53,4 @@ async def load_tables(
         session.tables[tables.SENSITIVITIES].load(sensitivities_df)
         session.tables[tables.TRADE_INFO].load(trade_info_df)
         session.tables[tables.RISK_FACTORS].load(risk_factors_df)
-        session.tables["Calendar"].load(calendar_df)
+        session.tables[tables.CALENDAR].load(calendar_df)
