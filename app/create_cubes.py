@@ -64,3 +64,10 @@ def create_sensitivities_cube(session: tt.Session, /) -> None:
         m["Vega.SUM"]          = tt.agg.sum(sensitivities["Vega"])
         m["CurvatureUp.SUM"]   = tt.agg.sum(sensitivities["CurvatureUp"])
         m["CurvatureDown.SUM"] = tt.agg.sum(sensitivities["CurvatureDown"])
+
+        # Medidas E2
+        # Definir el promedio de Vega
+        m["Vega.MEAN"] = tt.agg.mean(sensitivities["Vega"])
+
+        # Definir el máximo absoluto por subgrupo
+        m["Vega.MAX"] = tt.agg.max(sensitivities["Vega"])
