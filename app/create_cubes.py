@@ -71,3 +71,14 @@ def create_sensitivities_cube(session: tt.Session, /) -> None:
 
         # Definir el máximo absoluto por subgrupo
         m["Vega.MAX"] = tt.agg.max(sensitivities["Vega"])
+
+        # Medidas E3
+        # Definir la medida Delta_pct_RiskClass
+        # Se divide la suma del nivel actual con la suma del nivel superior
+        m["Delta_pct_RiskClass"] = m["Delta.SUM"] / tt.parent_value(
+            m["Delta.SUM"],
+            degrees={h["RiskHierarchy"]: 1}
+        )
+
+        # Aplicar formateador para mostrar el resultado como porcentaje (como en la sesión 1)
+        m["Delta_pct_RiskClass"].formatter = "DOUBLE[0.00%]"
